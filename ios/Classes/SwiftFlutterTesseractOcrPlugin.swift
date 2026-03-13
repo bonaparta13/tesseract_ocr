@@ -29,8 +29,11 @@ public class SwiftFlutterTesseractOcrPlugin: NSObject, FlutterPlugin {
 
             let dataSource: LanguageModelDataSource
             if let tessDataPath = tessDataPath {
-                // Use the documents directory path passed from Dart
-                dataSource = DocumentsTessDataSource(pathToTrainedData: tessDataPath)
+                // Dart passes the parent directory (e.g. Documents/).
+                // SwiftyTesseract expects the path to the tessdata folder itself,
+                // matching the Bundle extension: bundleURL/tessdata
+                let tessdataPath = (tessDataPath as NSString).appendingPathComponent("tessdata")
+                dataSource = DocumentsTessDataSource(pathToTrainedData: tessdataPath)
             } else {
                 dataSource = Bundle.main
             }
