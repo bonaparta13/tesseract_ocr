@@ -26,12 +26,10 @@ public class SwiftFlutterTesseractOcrPlugin: NSObject, FlutterPlugin {
             let params: [String : Any] = args as! [String : Any]
             let language: String? = params["language"] as? String
             let tessDataPath: String? = params["tessData"] as? String
+            let ocrArgs: [String: String]? = params["args"] as? [String: String]
 
             let dataSource: LanguageModelDataSource
             if let tessDataPath = tessDataPath {
-                // Dart passes the parent directory (e.g. Documents/).
-                // SwiftyTesseract expects the path to the tessdata folder itself,
-                // matching the Bundle extension: bundleURL/tessdata
                 let tessdataPath = (tessDataPath as NSString).appendingPathComponent("tessdata")
                 dataSource = DocumentsTessDataSource(pathToTrainedData: tessdataPath)
             } else {
@@ -43,6 +41,22 @@ public class SwiftFlutterTesseractOcrPlugin: NSObject, FlutterPlugin {
                 swiftyTesseract = SwiftyTesseract(language: .custom(language), dataSource: dataSource)
             } else {
                 swiftyTesseract = SwiftyTesseract(language: .english, dataSource: dataSource)
+            }
+
+            // Apply OCR args (whitelist, preserve_interword_spaces, etc.)
+            if let ocrArgs = ocrArgs {
+                if let whitelist = ocrArgs["tessedit_char_whitelist"] {
+                    swiftyTesseract.whiteList = whitelist
+                }
+                if let blacklist = ocrArgs["tessedit_char_blacklist"] {
+                    swiftyTesseract.blackList = blacklist
+                }
+                if let preserveSpaces = ocrArgs["preserve_interword_spaces"] {
+                    swiftyTesseract.preserveInterwordSpaces = (preserveSpaces == "1")
+                }
+                if let minHeight = ocrArgs["textord_min_xheight"], let val = Int(minHeight) {
+                    swiftyTesseract.minimumCharacterHeight = val
+                }
             }
 
             let imagePath = params["imagePath"] as! String
